@@ -1,6 +1,4 @@
-#Deeznutssss
-print("Hello")
-# Sianghong is a gay fuck
+
 # -*- coding: utf-8 -*-
 """
 Created on Sun Jan 22 11:33:37 2023
