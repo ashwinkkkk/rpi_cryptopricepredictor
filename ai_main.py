@@ -12,36 +12,43 @@ Created on Thu Dec 22 11:59:10 2022
 
 @author: ashwi
 """
+#import pandas_datareader as web
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Dropout, LSTM
+from sklearn.preprocessing import MinMaxScaler
+from datetime import datetime
+import time
+from decimal import Decimal
+import ccxt
+import os
+from kucoin.client import Client
+import json
+import requests
+import datetime as dt
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-#import pandas_datareader as web
 from pandas_datareader import data as pdr
 import yfinance as yf
 yf.pdr_override()
 y_symbols = ['BTC-USD']
-import datetime as dt
 
-from sklearn.preprocessing import MinMaxScaler
-from tensorflow.keras.layers import Dense, Dropout, LSTM
-from tensorflow.keras.models import Sequential
 
 crypto_currency = 'BTC'
 against_currency = 'USD'
 
-start = dt.datetime(2016,1,1)
+start = dt.datetime(2016, 1, 1)
 end = dt.datetime.now()
 data = pdr.get_data_yahoo(y_symbols, start=start, end=end)
 
 #data = web.DataReader('BTC-USD', 'yahoo', start, end)
 
 
-
 # Prepare the data
 scaler = MinMaxScaler(feature_range=(0, 1))
-scaled_data = scaler.fit_transform(data['Close'].values.reshape(-1,1))
-scaled_data = scaler.fit_transform(data['High'].values.reshape(-1,1))
-scaled_data = scaler.fit_transform(data['Low'].values.reshape(-1,1))
+scaled_data = scaler.fit_transform(data['Close'].values.reshape(-1, 1))
+scaled_data = scaler.fit_transform(data['High'].values.reshape(-1, 1))
+scaled_data = scaler.fit_transform(data['Low'].values.reshape(-1, 1))
 
 prediction_days = 60
 
@@ -52,16 +59,16 @@ print(len(scaled_data))
 for x in range(prediction_days, len(scaled_data)):
     x_train.append(scaled_data[x-prediction_days:x, 0])
     y_train.append(scaled_data[x, 0])
-    
+
 x_train, y_train = np.array(x_train), np.array(y_train)
 x_train = np.reshape(x_train, (x_train.shape[0], x_train.shape[1], 1))
-
 
 
 # Create the neural network
 
 model = Sequential()
-model.add(LSTM(units=50, return_sequences=True, input_shape=(x_train.shape[1], 1)))
+model.add(LSTM(units=50, return_sequences=True,
+               input_shape=(x_train.shape[1], 1)))
 model.add(Dropout(0.2))
 model.add(LSTM(units=50, return_sequences=True))
 model.add(Dropout(0.2))
@@ -75,7 +82,7 @@ model.fit(x_train,  y_train, epochs=25, batch_size=32)
 
 # Testing the model
 
-test_start = dt.datetime(2020,1,1)
+test_start = dt.datetime(2020, 1, 1)
 test_end = dt.datetime.now()
 
 test_data = pdr.get_data_yahoo(y_symbols, start=test_start, end=test_end)
@@ -84,8 +91,9 @@ actual_prices = test_data['Close'].values
 
 total_dataset = pd.concat((data['Close'], test_data['Close']), axis=0)
 
-model_inputs = total_dataset[len(total_dataset) - len(test_data) - prediction_days:].values
-model_inputs = model_inputs.reshape(-1,1)
+model_inputs = total_dataset[len(
+    total_dataset) - len(test_data) - prediction_days:].values
+model_inputs = model_inputs.reshape(-1, 1)
 model_inputs = scaler.fit_transform(model_inputs)
 
 x_test = []
@@ -107,7 +115,8 @@ plt.ylabel('Price')
 plt.legend(loc='upper left')
 plt.show()
 
-real_data = [model_inputs[len(model_inputs) - prediction_days:len(model_inputs), 0]]
+real_data = [
+    model_inputs[len(model_inputs) - prediction_days:len(model_inputs), 0]]
 real_data = np.array(real_data)
 real_data = np.reshape(real_data, (real_data.shape[0], real_data.shape[1], 1))
 
@@ -122,8 +131,9 @@ actual_prices = test_data['High'].values
 
 total_dataset = pd.concat((data['High'], test_data['High']), axis=0)
 
-model_inputs = total_dataset[len(total_dataset) - len(test_data) - prediction_days:].values
-model_inputs = model_inputs.reshape(-1,1)
+model_inputs = total_dataset[len(
+    total_dataset) - len(test_data) - prediction_days:].values
+model_inputs = model_inputs.reshape(-1, 1)
 model_inputs = scaler.fit_transform(model_inputs)
 
 x_test = []
@@ -145,14 +155,15 @@ plt.ylabel('Price')
 plt.legend(loc='upper left')
 plt.show()
 
-real_data = [model_inputs[len(model_inputs) - prediction_days:len(model_inputs), 0]]
+real_data = [
+    model_inputs[len(model_inputs) - prediction_days:len(model_inputs), 0]]
 real_data = np.array(real_data)
 real_data = np.reshape(real_data, (real_data.shape[0], real_data.shape[1], 1))
 
-prediction = model.predict(real_data)
-prediction = scaler.inverse_transform(prediction)
+high_prediction = model.predict(real_data)
+high_prediction = scaler.inverse_transform(prediction)
 
-print('High price', prediction)
+print('High price', high_prediction)
 
 test_data = pdr.get_data_yahoo(y_symbols, start=test_start, end=test_end)
 #test_data = web.DataReader('BTC-USD', 'yahoo', test_start, test_end)
@@ -160,8 +171,9 @@ actual_prices = test_data['Low'].values
 
 total_dataset = pd.concat((data['Low'], test_data['Low']), axis=0)
 
-model_inputs = total_dataset[len(total_dataset) - len(test_data) - prediction_days:].values
-model_inputs = model_inputs.reshape(-1,1)
+model_inputs = total_dataset[len(
+    total_dataset) - len(test_data) - prediction_days:].values
+model_inputs = model_inputs.reshape(-1, 1)
 model_inputs = scaler.fit_transform(model_inputs)
 
 x_test = []
@@ -183,11 +195,73 @@ plt.ylabel('Price')
 plt.legend(loc='upper left')
 plt.show()
 
-real_data = [model_inputs[len(model_inputs) - prediction_days:len(model_inputs), 0]]
+real_data = [
+    model_inputs[len(model_inputs) - prediction_days:len(model_inputs), 0]]
 real_data = np.array(real_data)
 real_data = np.reshape(real_data, (real_data.shape[0], real_data.shape[1], 1))
 
-prediction = model.predict(real_data)
-prediction = scaler.inverse_transform(prediction)
+low_prediction = model.predict(real_data)
+low_prediction = scaler.inverse_transform(prediction)
 
-print('Low price', prediction)
+print('Low price', low_prediction)
+
+
+# Send data to thingspeak
+
+api_key = "635b91ace4743e0001ca260f"
+api_secret = "2de78a92-9d17-4ffb-8e97-601bcfc14afc"
+api_passphrase = "idk85625881IDK!"
+
+client = Client(api_key, api_secret, api_passphrase)
+
+
+exchange = ccxt.binance({
+    'rateLimit': 2000,
+    'enableRateLimit': True,
+})
+
+
+# defining key/request url
+key = "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT"
+
+# requesting data from url
+data = requests.get(key)
+data = data.json()
+# print(f"{data['symbol']} price is {data['price']}")
+btc_price = data['price']
+print(btc_price)
+print(type(float(btc_price)))
+
+
+# order = client.create_market_order('BTC-USDT', Client.SIDE_BUY, size=0.0001)
+account = client.get_accounts()
+print(account[2])
+print(account[4])
+if account[2]["currency"] == "USDT" and account[4]["currency"] == "BTC":
+    # number 4 is bitcoin
+    btc_balance = account[4]["balance"]
+    value_of_btc_in_account = Decimal(btc_balance) * Decimal(btc_price)
+    usdt_in_account = account[2]["balance"]
+    total_balance = Decimal(usdt_in_account) + value_of_btc_in_account
+elif account[4]["currency"] == "BTC" and account[2]["currency"] == "USDT":
+    btc_balance = account[4]["balance"]
+    value_of_btc_in_account = Decimal(btc_balance) * Decimal(btc_price)
+    usdt_in_account = account[2]["balance"]
+    total_balance = Decimal(usdt_in_account) + value_of_btc_in_account
+elif account[2]["currency"] == "BTC" and account[4]["currency"] == "USDT":
+    btc_balance = account[2]["balance"]
+    value_of_btc_in_account = Decimal(btc_balance) * Decimal(btc_price)
+    usdt_in_account = account[4]["balance"]
+    total_balance = Decimal(usdt_in_account) + value_of_btc_in_account
+else:
+    print("Acount list numbers have changed.")
+
+print(total_balance)
+api_key_thingspeak = 'Z7E32G7OH55VXQQU'
+channel_id = '2008467'
+
+url = 'https://api.thingspeak.com/update?api_key=' + api_key_thingspeak + '&field1=' + \
+    str(prediction) + '&field2' + str(high_prediction) + '&field3' + \
+    str(low_prediction) + '&field4' + str(total_balance)
+response = requests.get(url)
+print(response.status_code)
