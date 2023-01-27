@@ -40,6 +40,8 @@ data = pdr.get_data_yahoo(y_symbols, start=start, end=end)
 # Prepare the data
 scaler = MinMaxScaler(feature_range=(0, 1))
 scaled_data = scaler.fit_transform(data['Close'].values.reshape(-1,1))
+scaled_data = scaler.fit_transform(data['High'].values.reshape(-1,1))
+scaled_data = scaler.fit_transform(data['Low'].values.reshape(-1,1))
 
 prediction_days = 60
 
@@ -105,11 +107,87 @@ plt.ylabel('Price')
 plt.legend(loc='upper left')
 plt.show()
 
-real_data = [model_inputs[len(model_inputs) + 1 - prediction_days:len(model_inputs) + 1, 0]]
+real_data = [model_inputs[len(model_inputs) - prediction_days:len(model_inputs), 0]]
 real_data = np.array(real_data)
 real_data = np.reshape(real_data, (real_data.shape[0], real_data.shape[1], 1))
 
 prediction = model.predict(real_data)
 prediction = scaler.inverse_transform(prediction)
 
-print(prediction)
+print('Closing price', prediction)
+
+test_data = pdr.get_data_yahoo(y_symbols, start=test_start, end=test_end)
+#test_data = web.DataReader('BTC-USD', 'yahoo', test_start, test_end)
+actual_prices = test_data['High'].values
+
+total_dataset = pd.concat((data['High'], test_data['High']), axis=0)
+
+model_inputs = total_dataset[len(total_dataset) - len(test_data) - prediction_days:].values
+model_inputs = model_inputs.reshape(-1,1)
+model_inputs = scaler.fit_transform(model_inputs)
+
+x_test = []
+
+for x in range(prediction_days, len(model_inputs)):
+    x_test.append(model_inputs[x-prediction_days:x, 0])
+
+x_test = np.array(x_test)
+x_test = np.reshape(x_test, (x_test.shape[0], x_test.shape[1], 1))
+
+prediction_prices = model.predict(x_test)
+prediction_prices = scaler.inverse_transform(prediction_prices)
+
+plt.plot(actual_prices, color='black', label='Actual Prices')
+plt.plot(prediction_prices, color='green', label='Predicted Prices')
+plt.title('Crypto price prediction')
+plt.xlabel('Time')
+plt.ylabel('Price')
+plt.legend(loc='upper left')
+plt.show()
+
+real_data = [model_inputs[len(model_inputs) - prediction_days:len(model_inputs), 0]]
+real_data = np.array(real_data)
+real_data = np.reshape(real_data, (real_data.shape[0], real_data.shape[1], 1))
+
+prediction = model.predict(real_data)
+prediction = scaler.inverse_transform(prediction)
+
+print('High price', prediction)
+
+test_data = pdr.get_data_yahoo(y_symbols, start=test_start, end=test_end)
+#test_data = web.DataReader('BTC-USD', 'yahoo', test_start, test_end)
+actual_prices = test_data['Low'].values
+
+total_dataset = pd.concat((data['Low'], test_data['Low']), axis=0)
+
+model_inputs = total_dataset[len(total_dataset) - len(test_data) - prediction_days:].values
+model_inputs = model_inputs.reshape(-1,1)
+model_inputs = scaler.fit_transform(model_inputs)
+
+x_test = []
+
+for x in range(prediction_days, len(model_inputs)):
+    x_test.append(model_inputs[x-prediction_days:x, 0])
+
+x_test = np.array(x_test)
+x_test = np.reshape(x_test, (x_test.shape[0], x_test.shape[1], 1))
+
+prediction_prices = model.predict(x_test)
+prediction_prices = scaler.inverse_transform(prediction_prices)
+
+plt.plot(actual_prices, color='black', label='Actual Prices')
+plt.plot(prediction_prices, color='green', label='Predicted Prices')
+plt.title('Crypto price prediction')
+plt.xlabel('Time')
+plt.ylabel('Price')
+plt.legend(loc='upper left')
+plt.show()
+
+real_data = [model_inputs[len(model_inputs) - prediction_days:len(model_inputs), 0]]
+real_data = np.array(real_data)
+real_data = np.reshape(real_data, (real_data.shape[0], real_data.shape[1], 1))
+
+prediction = model.predict(real_data)
+prediction = scaler.inverse_transform(prediction)
+
+print('Low price', prediction)
