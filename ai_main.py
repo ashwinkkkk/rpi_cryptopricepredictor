@@ -161,7 +161,7 @@ real_data = np.array(real_data)
 real_data = np.reshape(real_data, (real_data.shape[0], real_data.shape[1], 1))
 
 high_prediction = model.predict(real_data)
-high_prediction = scaler.inverse_transform(prediction)
+high_prediction = scaler.inverse_transform(high_prediction)
 
 print('High price', high_prediction)
 
@@ -201,7 +201,7 @@ real_data = np.array(real_data)
 real_data = np.reshape(real_data, (real_data.shape[0], real_data.shape[1], 1))
 
 low_prediction = model.predict(real_data)
-low_prediction = scaler.inverse_transform(prediction)
+low_prediction = scaler.inverse_transform(low_prediction)
 
 print('Low price', low_prediction)
 
@@ -261,7 +261,7 @@ api_key_thingspeak = 'Z7E32G7OH55VXQQU'
 channel_id = '2008467'
 
 url = 'https://api.thingspeak.com/update?api_key=' + api_key_thingspeak + '&field1=' + \
-    str(prediction) + '&field2' + str(high_prediction) + '&field3' + \
-    str(low_prediction) + '&field4' + str(total_balance)
+    str(prediction) + '&field2=' + str(high_prediction) + '&field3=' + \
+    str(low_prediction) + '&field4=' + str(total_balance)
 response = requests.get(url)
 print(response.status_code)
